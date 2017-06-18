@@ -1,21 +1,16 @@
 
 #ifndef DIPLOMSOLDATOV_FUNCTIONS_H
 #define DIPLOMSOLDATOV_FUNCTIONS_H
-double_t func_calculate_rho(double_t t)
-{
+double_t func_calculate_rho(double_t t) {
     return (RHO_0 * exp(- Coeff_K * (ACCELERATION * t * t / 2)));
 }
 
-double_t func_calculate_q(double_t t)
-{
-
+double_t func_calculate_q(double_t t) {
     double_t rho = func_calculate_rho(t);
-    double_t V = 0;
+    double_t V = ACCELERATION * t;
 
-    V = ACCELERATION * t;
-
-    return ((Coeff_S * rho * V * V * V) /
-            (2 * Thermal_Conductivity * PI * TRIANGLE_BASE * sqrt(TRIANGLE_BASE * TRIANGLE_BASE + TRIANGLE_HEIGHT * TRIANGLE_HEIGHT)));
+    return (Coeff_S * rho * V * V * V) /
+            (2 * Thermal_Conductivity * PI * TRIANGLE_BASE * sqrt(TRIANGLE_BASE * TRIANGLE_BASE + TRIANGLE_HEIGHT * TRIANGLE_HEIGHT));
 }
 
 void func_multiply_matrix_and_vector(double_t* result_vector, double_t** matrix, double_t* vect, uint_fast32_t dim) {
@@ -29,7 +24,6 @@ void func_multiply_matrix_and_vector(double_t* result_vector, double_t** matrix,
 }
 
 void func_substract_two_matrices(double_t ** result_matrix, double_t** matrix1, double_t** matrix2, uint_fast32_t dim, double_t devide_element) {
-
     for (auto i = 0; i < dim; i++)
         for (auto j = 0; j < dim; j++)
             result_matrix[i][j] = (devide_element * matrix1[i][j]) - matrix2[i][j];
@@ -51,4 +45,10 @@ void print(vector< vector<double_t> > A) {
     cout << endl;
     file_slau.close();
 }
+
+// прототип
+void GetIzotherm(double_t *Isotherm_array, double_t * temperatures) {
+
+}
+
 #endif //DIPLOMSOLDATOV_FUNCTIONS_H
