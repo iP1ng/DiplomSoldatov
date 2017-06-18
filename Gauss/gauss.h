@@ -13,7 +13,7 @@ using namespace std;
 
 class Gauss {
 public:
-    void Solve(double *x, vector< vector<double> > A);
+    void Solve(double_t *x, vector< vector<double_t> > A);
 };
 
 

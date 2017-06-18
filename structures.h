@@ -11,10 +11,10 @@
  * Структура, описывающая координаты и номер узла, а также радиус-вектор узла.
  */
 struct points {
-    double x;
-    double y;
+    double_t x;
+    double_t y;
     // TODO проверить, что радиус-вектор в цилиндрических координатах вычисляется так
-    double rad_vector() { return x; }
+    double_t rad_vector() { return x; }
     uint_fast32_t point_num;
 };
 
@@ -28,29 +28,29 @@ struct triangles {
     points second_point;
     points third_point;
 
-    void coef_a(double* a)
+    void coef_a(double_t* a)
     {
         a[0] = second_point.x * third_point.y - third_point.x * second_point.y;
         a[1] = third_point.x * first_point.y - first_point.x * third_point.y;
         a[2] = first_point.x * second_point.y - second_point.x * first_point.y;
     }
-    void coef_b(double* b)
+    void coef_b(double_t* b)
     {
         b[0] = second_point.y - third_point.y;
         b[1] = third_point.y - first_point.y;
         b[2] = first_point.y - second_point.y;
     }
-    void coef_c(double* c)
+    void coef_c(double_t* c)
     {
         c[0] = third_point.x - second_point.x;
         c[1] = first_point.x - third_point.x;
         c[2] = second_point.x - first_point.x;
     }
-    double GetSquareTriangleArea()
+    double_t GetSquareTriangleArea()
     {
-        return STEP_X * 2 * STEP_X * 0.5;
+        return STEP_X * (RATIO_Y_TO_X * STEP_X) * 0.5;
     }
-    double GetMatrixADeterminant()
+    double_t GetMatrixADeterminant()
     {
         return 0.5 * (second_point.x * third_point.y
                       - third_point.x * second_point.y
@@ -59,7 +59,7 @@ struct triangles {
                       + third_point.x * first_point.y
                       - second_point.x * first_point.y);
     }
-    double GetR() {
+    double_t GetR() {
         points p[3];
 
         p[0].x = first_point.x;
@@ -69,7 +69,7 @@ struct triangles {
         p[2].x = third_point.x;
         p[2].y = third_point.y;
 
-        double R = (0.0833333333333333333333333) * ((2 * p[0].rad_vector()
+        double_t R = (0.0833333333333333333333333) * ((2 * p[0].rad_vector()
                                                        + p[1].rad_vector()
                                                        + p[2].rad_vector())
                                                       * p[0].rad_vector()
@@ -86,9 +86,9 @@ struct triangles {
 
     /* Коэффициенты функции формы каждого симплекса */
     void GetN(double_t * N, double_t * Phi) {
-        double a[3];
-        double b[3];
-        double c[3];
+        double_t a[3];
+        double_t b[3];
+        double_t c[3];
         coef_a(a);
         coef_b(b);
         coef_c(c);
@@ -103,16 +103,16 @@ struct triangles {
         }
     }
 
-    void Matrix_K(double** K)
+    void Matrix_K(double_t** K)
     {
-        double a[3];
-        double b[3];
-        double c[3];
+        double_t a[3];
+        double_t b[3];
+        double_t c[3];
         coef_a(a);
         coef_b(b);
         coef_c(c);
 
-        double R = GetR();
+        double_t R = GetR();
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
 
@@ -123,7 +123,7 @@ struct triangles {
         }
     }
 
-    void Matrix_C(double** C)
+    void Matrix_C(double_t** C)
     {
         points p[3];
         p[0].x = first_point.x;
@@ -133,8 +133,8 @@ struct triangles {
         p[2].x = third_point.x;
         p[2].y = third_point.y;
 
-        double D = 2 * PI * this->GetMatrixADeterminant() / 180;
-        double R[3];
+        double_t D = 2 * PI * this->GetMatrixADeterminant() / 180;
+        double_t R[3];
         for (int i = 0; i < 3; i++) {
             R[i] = p[i].rad_vector();
         }
@@ -180,18 +180,23 @@ struct triangles {
         C[2][1] = C[1][2];
     }
 
-    void Column_F(double* F, double q)
+    void Column_F(double_t* F, double_t q)
     {
-        double L = sqrt(STEP_X * STEP_X + 4 * STEP_X * STEP_X);
-        double k = L * q * 2.0 * PI / 6;
+        double_t L = sqrt(STEP_X * STEP_X + (RATIO_Y_TO_X *STEP_X) * (RATIO_Y_TO_X * STEP_X));
+        double_t k = L * q * 2.0 * PI / 6;
 
         F[0] = 0;
         F[1] = 0;
         F[2] = 0;
-        if (fabs(2 * first_point.x - first_point.y) < EPS_T
-            && fabs(2 * third_point.x - third_point.y) < EPS_T) {
+        /*
+         * TODO Уточнить у Пугачева условие в левой нижней и верхней точках, где 
+         * на точки действуют сразу два разных граничных условия
+         * в этих местах температура сходит с ума (идет в минус)
+         */
+        if (fabs(RATIO_Y_TO_X * first_point.x - first_point.y) < EPS_T
+            && fabs(RATIO_Y_TO_X * third_point.x - third_point.y) < EPS_T) {
             F[0] = k * (2.0 * first_point.rad_vector() + third_point.rad_vector());
-            F[2] = k * (first_point.rad_vector() + 2 * third_point.rad_vector());
+            F[2] = k * (first_point.rad_vector() + 2.0 * third_point.rad_vector());
 
         }
     }

@@ -4,15 +4,15 @@
 #include <iomanip> // setprecicion for cout Debug
 
 
-double func_calculate_rho(double t);
+double_t func_calculate_rho(double_t t);
 
-double func_calculate_q(double t);
+double_t func_calculate_q(double_t t);
 
-void func_multiply_matrix_and_vector(double* result_vector, double** matrix, double* vect, uint_fast32_t dim);
+void func_multiply_matrix_and_vector(double_t* result_vector, double_t** matrix, double_t* vect, uint_fast32_t dim);
 
-void func_substract_two_matrices(double** result_matrix, double** matrix1, double** matrix2, uint_fast32_t dim, double devide_element);
+void func_substract_two_matrices(double_t** result_matrix, double_t** matrix1, double_t** matrix2, uint_fast32_t dim, double_t devide_element);
 
-void print(vector< vector<double> > A) {
+void print(vector< vector<double_t> > A) {
     ofstream file_slau("SLAU.dat", std::ofstream::out | std::ofstream::app);
     int n = A.size();
     for (int i=0; i<n; i++) {
@@ -34,7 +34,7 @@ int main() {
     /**
      * Отладочные сообщения для функци построения триангуляции и нумерации узлов
      */
-    bool debug = true;
+    bool debug = false;
     /**
      * Инстанс класса, отвечающий за триангулацию треугольника
      */
@@ -50,43 +50,43 @@ int main() {
     /**
      * Тепловой поток, заданный на границе
      */
-    double q = 0;
+    double_t q = 0;
     /**
      * Столбец правых частей для элемента на текущем слое
      */
-    double *F = new double[DIMENSION];
+    double_t *F = new double_t[DIMENSION];
     /**
      * Столбец правых частей для элемента
      */
-    double *F_old = new double[DIMENSION];
+    double_t *F_old = new double_t[n];
     /**
      * Значения температуры в узлах
      */
-    double *Temp = new double[n];
+    double_t *Temp = new double_t[n];
     /**
      * Cюда записываем те температуры с предыдыщуего слоя которые нас интересуют для данного конечного элемента
      */
-    double Fi[3];
+    double_t Fi[3];
     /**
      * Промежуточная переменная для записи произведения матрицы и столбца
      */
-    double *Resultic = new double[DIMENSION];
+    double_t *Resultic = new double_t[DIMENSION];
     /**
      * Вектор правых частей итоговой системы
      */
-    double *Result = new double[n];
+    double_t *Result = new double_t[n];
     /**
      * Итоговая матрица жесткости системы
      */
-    double **Main_Matrix= new double *[n];
+    double_t **Main_Matrix= new double_t *[n];
     /**
      * Матрица коэффициентов элемента K
      */
-    double **K = new double *[DIMENSION];
+    double_t **K = new double_t *[DIMENSION];
     /**
      * Матрица коэффициентов элемента C
      */
-    double **C = new double *[DIMENSION];
+    double_t **C = new double_t *[DIMENSION];
     /**
      * Массив номеров строк в итоговом векторе правых частей Result,
      * к которому нужно будет прибавить полученные правые части F на элементе
@@ -95,19 +95,19 @@ int main() {
     /**
      * Результат вычитания двух матриц. Вспомогательная переменная
      */
-    double ** substracted_matrix = new double* [DIMENSION];
+    double_t ** substracted_matrix = new double_t* [DIMENSION];
     /**
      * Еще один Гаусс
      */
-    vector< vector<double> > equation1_A(n, std::vector<double>(n+1));
+    vector< vector<double_t> > equation1_A(n, std::vector<double_t>(n+1));
     Gauss equation;
     /**
      * Вспомогательные переменные для накапливания матриц поэлементно
      */
-    double **R1; R1 = new double *[n];
-    double *FF; FF  = new double [n];
+    double_t **R1; R1 = new double_t *[n];
+    double_t *FF; FF  = new double_t [n];
     for (int kk = 0; kk<n; kk++){
-        R1[kk] = new double[n];
+        R1[kk] = new double_t[n];
         FF[kk] = 0;
         for (int j = 0; j< n; j++)
             R1[kk][j] = 0;
@@ -162,42 +162,58 @@ int main() {
     }
 
     for (uint_fast32_t i = 0; i < DIMENSION; i++) {
-        substracted_matrix[i] = new double[DIMENSION];
+        substracted_matrix[i] = new double_t[DIMENSION];
     }
 
     /* Инициализация матрц K, C и вектора правых частей F для элемента */
     for (uint_fast32_t i = 0; i < DIMENSION; i++) {
-        K[i] = new double[DIMENSION];
-        C[i] = new double[DIMENSION];
+        K[i] = new double_t[DIMENSION];
+        C[i] = new double_t[DIMENSION];
     }
 
     /* Инициализация матрицы жесткости и вектора правой части итоговой системы */
     for (uint_fast32_t i = 0; i < n; i++) {
-        Main_Matrix[i] = new double[n];
+        Main_Matrix[i] = new double_t[n];
         Result[i] = 0;
         for (int j = 0; j < n; j++) {
             Main_Matrix[i][j] = 0;
         }
     }
 
-    /* Ищем решения по временным слоям */
+    /************************************************************************************/
+    /*
+     * Ищем решения по временным слоям
+     * Пока не начнется плавление наконечника
+     */
+    /************************************************************************************/
     uint_fast32_t number_of_time_steps = floor(TIME_WHEN_FUEL_ENDS / TAU);
-    //const uint_fast32_t MAGIC_NUMBER = 50;
+    /* Средняя температура на наконечнике */
+    double_t average_temp = 0;
+    /* Время, которое уже успела пролететь ракета */
+    double_t flight_time = - TAU;
     //double_t rho_for_file = 0;
     //for (uint_fast32_t global_tau =0; global_tau  < number_of_time_steps; global_tau++) {
-    for (uint_fast32_t global_tau =0; global_tau  < DEBUG_TIME_STEPS; global_tau++) {
+    //for (uint_fast32_t global_tau =0; global_tau  < DEBUG_TIME_STEPS; global_tau++) {
+    while (average_temp < MELTING_TEMPERATURE) {
+        average_temp = 0;
+        flight_time += TAU;
+
+        for(uint_fast32_t i = 0; i < n; i++)
+            average_temp += Temp[i] / n;
+
+        cout << "flight_time = " << flight_time << endl;
+        cout << "average_temp = " << average_temp << endl;
 
         //rho_for_file = func_calculate_rho(global_tau * TAU);
-        q = -func_calculate_q(global_tau * TAU);
+        q = -func_calculate_q(flight_time);
         //rho_difference << global_tau * TAU << ' ' << rho_for_file << endl;
         //q_difference << global_tau * TAU << ' '  << - q << endl;
 
 
         //cout << "q = " << q << endl;
-        //q = 100000;
+        //q = - 10000;
 
         for (uint_fast32_t i = 0; i < DIMENSION; i++) {
-            F_old[i] = F[i];
             F[i] = 0;
             Resultic[i] = 0;
             Fi[i] = 0;
@@ -207,14 +223,6 @@ int main() {
                 substracted_matrix[i][j] = 0;
             }
         }
-        /* Debug */
-        //cout << "Time: "<< global_tau * TAU << endl;
-        //cout << "Temperature on step " << global_tau << endl;
-        //for (uint_fast32_t i = 0; i < n; i++) {
-        //    cout <<setprecision(16)<< Temp[i] << "\t";
-        //}
-        //cout << endl;
-        /* End debug */
 
         /*
          * Обнуление матрицы жесткости и вектора правой части итоговой системы
@@ -230,12 +238,17 @@ int main() {
          * Обнуляем вспомогательные переменные для поэлементного накопления
          */
         for (int kk = 0; kk<n; kk++){
+            F_old[kk] = FF[kk];
             FF[kk] = 0;
             for (int j = 0; j< n; j++)
                 R1[kk][j] = 0;
         }
 
-        /* Идем по всем элементам */
+        /************************************************************************************/
+        /*
+         * Идем по всем элементам
+         */
+        /************************************************************************************/
         for (uint_fast32_t i = 0; i < k; i++) {
             /* Вычисляем матрицы коэффициентов K, C и вектор правых частей F для элемента k */
             triangle.triangles_array[i].Matrix_K(K);
@@ -270,7 +283,7 @@ int main() {
              */
             for (uint_fast32_t j = 0; j < 3; j++) {
                 // по формуле 11.21
-                FF[ind[j]] += - (F[j] + F_old[j]);
+                FF[ind[j]] += - (F[j]);
                 for (uint_fast32_t l = 0; l < 3; l++) {
                     Main_Matrix[ind[j]][ind[l]] += (C[j][l] * 2 / TAU) + K[j][l];
                     R1[ind[j]][ind[l]] += substracted_matrix[j][l];
@@ -290,7 +303,7 @@ int main() {
         }
         for (int ii = 0; ii<n; ii++){
             // На этом моменте в Result содержится полностью сформированный вектор правой части
-            Result[ii]+= FF[ii];
+            Result[ii]+= (FF[ii] - F_old[ii]);
             //cout<<setprecision(9)<<Result[ii]<<endl;
         }
 
@@ -315,10 +328,10 @@ int main() {
         uint_fast32_t dots_shift = 0;
 
         triangle_temp << endl;
-        triangle_temp << "Temperature on time = " << global_tau * TAU << endl;
+        triangle_temp << "Temperature on time = " << flight_time << endl;
         triangle_temp << "with heat flow q = " << q << endl;
         for (auto strs = 0; strs < dots_num; strs++)
-            triangle_temp << "********";
+            triangle_temp << "**********";
         triangle_temp << endl;
         for (auto d = 0; d < n; d++) {
             if (d == dots_num) {
@@ -327,16 +340,16 @@ int main() {
                 dots_shift ++;
                 triangle_temp << endl;
                 for (auto st = 0; st < dots_shift; st++)
-                    triangle_temp << setw(8) << " ";
+                    triangle_temp << setw(10) << " ";
             }
-            triangle_temp << setw(8) << setprecision(6)<< Temp[d];
+            triangle_temp << setw(10) << setprecision(8)<< Temp[d];
         }
         /* End debug */
         /*
          * Вычисляем коэффициенты функции формы
          */
 
-        /*double N[3];
+        /*double_t N[3];
 
         for (int j = 0; j<k; j++ ){
 
@@ -360,16 +373,16 @@ int main() {
     return 0;
 }
 
-double func_calculate_rho(double t)
+double_t func_calculate_rho(double_t t)
 {
     return (RHO_0 * exp(- Coeff_K * (ACCELERATION * t * t / 2)));
 }
 
-double func_calculate_q(double t)
+double_t func_calculate_q(double_t t)
 {
 
-    double rho = func_calculate_rho(t);
-    double V = 0;
+    double_t rho = func_calculate_rho(t);
+    double_t V = 0;
 
     if (t < TIME_WHEN_FUEL_ENDS)
         V = ACCELERATION * t;
@@ -378,7 +391,7 @@ double func_calculate_q(double t)
             (2 * Thermal_Conductivity * PI * TRIANGLE_BASE * sqrt(TRIANGLE_BASE * TRIANGLE_BASE + TRIANGLE_HEIGHT * TRIANGLE_HEIGHT)));
 }
 
-void func_multiply_matrix_and_vector(double* result_vector, double** matrix, double* vect, uint_fast32_t dim) {
+void func_multiply_matrix_and_vector(double_t* result_vector, double_t** matrix, double_t* vect, uint_fast32_t dim) {
     for (uint_fast32_t ii = 0; ii < DIMENSION; ii++)
         result_vector[ii] = 0;
     for (int ix = 0; ix < DIMENSION; ix++) {
@@ -388,7 +401,7 @@ void func_multiply_matrix_and_vector(double* result_vector, double** matrix, dou
     }
 }
 
-void func_substract_two_matrices(double ** result_matrix, double** matrix1, double** matrix2, uint_fast32_t dim, double devide_element) {
+void func_substract_two_matrices(double_t ** result_matrix, double_t** matrix1, double_t** matrix2, uint_fast32_t dim, double_t devide_element) {
 
     for (auto i = 0; i < dim; i++)
         for (auto j = 0; j < dim; j++)

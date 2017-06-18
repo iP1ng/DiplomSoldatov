@@ -2,8 +2,7 @@
 
 double_t IsoscelesTriangleGrid::LineFunction_ab(double_t x, double_t step)
 {
-    double_t y = 2 * (x - step);
-
+    double_t y = RATIO_Y_TO_X * (x - step);
     return y;
 }
 
@@ -76,10 +75,6 @@ uint_fast32_t IsoscelesTriangleGrid::GetGreed(bool debug)
             x = (ii + 1) * m_hx;
             y = LineFunction_ab(x, i * m_hx);
 
-            // ошибка округления, видимо при m_hx = 0.01
-            cout << "test " << k + ((length / m_hx) + 1) << endl;
-            cout << "length " << length << endl;
-            cout << " k was " << k << endl;
             triangle.third_point = { x, y, k + ((length / m_hx) + 1) };
 
             triangles_array.push_back(triangle);
