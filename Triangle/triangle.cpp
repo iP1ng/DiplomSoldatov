@@ -11,7 +11,7 @@ double_t IsoscelesTriangleGrid::LineFunction_bc()
     return TRIANGLE_BASE;
 }
 
-uint_fast32_t IsoscelesTriangleGrid::GetGreed(bool debug)
+uint_fast32_t IsoscelesTriangleGrid::GetGreed(double_t m_hx, bool debug)
 {
     /*
      * Массив координат треугольников

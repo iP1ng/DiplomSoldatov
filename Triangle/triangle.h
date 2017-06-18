@@ -32,12 +32,10 @@ private:
      * m_a - левая точка треугольника
      * m_b - правая точка треугольника
      * m_c - центральная точка треугольника
-     * m_hx - шаг по оси x
      */
     points m_a;
     points m_b;
     points m_c;
-    double_t m_hx;
     triangles triangle;
 
 public:
@@ -46,22 +44,21 @@ public:
     /*
      * Конструктор класса IsoscelesTriangleGrid
      */
-    IsoscelesTriangleGrid(points a, points b, points c, double_t hx)
+    IsoscelesTriangleGrid(points a, points b, points c)
     {
         m_a = a;
         m_b = b;
         m_c = c;
-        m_hx = hx;
     }
-
-    double_t GetStep() { return m_hx; }
 
     /*
      * Метод построения сетки
-     * TODO массив задавать не хардкодом, а вычислять число треугольников заранее
-     * На выход число узлов
+     * m_hx - шаг по оси x
+     * щаг по оси y определяется уравнением, описывающим гипотенузу
+     * debug = true для отладочных сообщений
+     * На выходе возвращает число узлов
      */
-    uint_fast32_t GetGreed(bool debug);
+    uint_fast32_t GetGreed(double_t m_hx, bool debug);
 
     /*
      * Функция, вычисляющая значение координаты y по заданной координате x на прямой AB треугольника
