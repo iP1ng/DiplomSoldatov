@@ -8,7 +8,7 @@
 /**
  * Шаг по пространству
  */
-const double STEP_X = 0.05;
+const double STEP_X = 0.1;
 /**
  * Шаг по времени
  */

@@ -83,9 +83,9 @@ struct triangles {
                                                         * p[2].rad_vector());
         return R;
     }
-    void Matrix_K(double** K)
-    {
-        points p[3];
+
+    /* Коэффициенты функции формы каждого симплекса */
+    void GetN(double_t * N, double_t * Phi) {
         double a[3];
         double b[3];
         double c[3];
@@ -93,44 +93,36 @@ struct triangles {
         coef_b(b);
         coef_c(c);
 
-        p[0].x = first_point.x;
-        p[0].y = first_point.y;
-        p[1].x = second_point.x;
-        p[1].y = second_point.y;
-        p[2].x = third_point.x;
-        p[2].y = third_point.y;
-        //std::cout << "p[0].rad_vector() = " << p[0].rad_vector() << std::endl;
-        //std::cout << "p[1].rad_vector() = " << p[1].rad_vector() << std::endl;
-        //std::cout << "p[2].rad_vector() = " << p[2].rad_vector() << std::endl;
-        double R = (0.0833333333333333333333333) * ((2 * p[0].rad_vector()
-                                                       + p[1].rad_vector()
-                                                       + p[2].rad_vector())
-                                                      * p[0].rad_vector()
-                                                      + (p[0].rad_vector()
-                                                         + 2 * p[1].rad_vector()
-                                                         + p[2].rad_vector())
-                                                        * p[1].rad_vector()
-                                                      + (p[0].rad_vector()
-                                                         + p[1].rad_vector()
-                                                         + 2 * p[2].rad_vector())
-                                                        * p[2].rad_vector());
+        for (auto i = 0; i < DIMENSION; i++)
+            N[i] = 0;
+
+        for (auto i = 0; i < DIMENSION; i++) {
+            N[0] += 1 / (2 * GetMatrixADeterminant()) * (a[i]) * Phi[i];
+            N[1] += 1 / (2 * GetMatrixADeterminant()) * (b[i]) * Phi[i]; // при rho
+            N[2] += 1 / (2 * GetMatrixADeterminant()) * (c[i]) * Phi[i]; // при z
+        }
+    }
+
+    void Matrix_K(double** K)
+    {
+        double a[3];
+        double b[3];
+        double c[3];
+        coef_a(a);
+        coef_b(b);
+        coef_c(c);
+
+        double R = GetR();
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                //std::cout << "Thermal_Diffusivity = " << Thermal_Diffusivity << std::endl;
-                //std::cout << "PI = " << PI << std::endl;
-                //std::cout << "R = " << R << std::endl;
-                ///std::cout << "this->GetMatrixADeterminant() = " << this->GetMatrixADeterminant() << std::endl;
-                //std::cout << "b[i] = " << b[i] << "b[j] = " << b[j] << std::endl;
-                //std::cout << "c[i] = " << c[i] << "c[j] = " << c[j] << std::endl;
 
                 /* Для теста из учебника (стр. 95) подставить вместо Thermal_Diffusivity 40 */
                 K[i][j] = (Thermal_Diffusivity * 2.0 * PI * R / (4.0 * this->GetMatrixADeterminant()))
                           * (b[i] * b[j] + c[i] * c[j]);
-                //std::cout << K[i][j] << " ";
             }
-            //std::cout << std::endl;
         }
     }
+
     void Matrix_C(double** C)
     {
         points p[3];
@@ -187,6 +179,7 @@ struct triangles {
                        + 6 * R[1] * R[2]);
         C[2][1] = C[1][2];
     }
+
     void Column_F(double* F, double q)
     {
         double L = sqrt(STEP_X * STEP_X + 4 * STEP_X * STEP_X);

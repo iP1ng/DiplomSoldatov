@@ -98,6 +98,33 @@ int main() {
     vector< vector<double> > equation1_A(n, std::vector<double>(n+1));
     Gauss equation;
 
+    /**
+     * Wolfram Mathematica
+     */
+    ofstream triangles_coordinates("triangles_coordinates.dat", std::ofstream::out);
+
+    triangles_coordinates << n << endl;
+    for (auto i = 0; i < k; i ++) {
+            triangles_coordinates << triangle.triangles_array[i].first_point.x << ' ';
+            triangles_coordinates << triangle.triangles_array[i].first_point.y << ' ';
+            triangles_coordinates << endl;
+            triangles_coordinates << triangle.triangles_array[i].second_point.x << ' ';
+            triangles_coordinates << triangle.triangles_array[i].second_point.y << ' ';
+            triangles_coordinates << endl;
+            triangles_coordinates << triangle.triangles_array[i].third_point.x << ' ';
+            triangles_coordinates << triangle.triangles_array[i].third_point.y << ' ';
+            triangles_coordinates << endl;
+        }
+    triangles_coordinates.close();
+
+    ofstream q_difference("q_difference.dat", std::ofstream::out);
+    ofstream rho_difference("rho_difference.dat", std::ofstream::out);
+    ofstream form_fuc_coeffs("form_fuc_coeffs.dat", std::ofstream::out);
+    form_fuc_coeffs << k * 3 << endl;
+
+
+
+
 
     /* Debug */
     cout << "Number of dots = " << n << endl;
@@ -125,10 +152,17 @@ int main() {
 
     /* Ищем решения по временным слоям */
     uint_fast32_t number_of_time_steps = floor(TIME_WHEN_FUEL_ENDS / TAU);
+    const uint_fast32_t MAGIC_NUMBER = 50;
+    double_t rho_for_file = 0;
     //for (uint_fast32_t global_tau =0; global_tau  < number_of_time_steps; global_tau++) {
-    for (uint_fast32_t global_tau =0; global_tau  < 100; global_tau++) {
+    for (uint_fast32_t global_tau =0; global_tau  < MAGIC_NUMBER; global_tau++) {
 
+        rho_for_file = func_calculate_rho(global_tau * TAU);
         q = -func_calculate_q(global_tau * TAU);
+        rho_difference << global_tau * TAU << ' ' << rho_for_file << endl;
+        q_difference << global_tau * TAU << ' '  << - q << endl;
+
+
         cout << "q = " << q << endl;
         //q = 100000;
 
@@ -193,7 +227,8 @@ int main() {
             /* Заполняем итоговую матрицу жесткости и вектор правой части  полученными на элементе значениями */
             for (uint_fast32_t j = 0; j < 3; j++) {
                 //Result[ind[j]] += (Resultic[j]) - 2 * F[j];
-                FF[ind[j]] += - 2 * F[j];
+                // это нужно поменять!!!!! по формуле 11.21
+                FF[ind[j]] += -   F[j];
                 //Result[ind[j]] += F[j];
                 for (uint_fast32_t l = 0; l < 3; l++) {
                     Main_Matrix[ind[j]][ind[l]] += (C[j][l] * 2 / TAU) + K[j][l];
@@ -210,7 +245,7 @@ int main() {
 
         for (int ii = 0; ii<n; ii++){
             Result[ii]+= FF[ii];
-            cout<<setprecision(9)<<Result[ii]<<endl;
+            //cout<<setprecision(9)<<Result[ii]<<endl;
         }
 
         for (int p=0; p<n; p++) {
@@ -223,7 +258,27 @@ int main() {
         }
 
         equation.Solve(Temp, equation1_A);
+        double N[3];
+
+        for (int j = 0; j<k; j++ ){
+
+            ind[0] = triangle.triangles_array[j].first_point.point_num;
+            ind[1] = triangle.triangles_array[j].second_point.point_num;
+            ind[2] = triangle.triangles_array[j].third_point.point_num;
+
+
+            for (uint_fast32_t jj = 0; jj < DIMENSION; jj++)
+                Fi[jj] = Temp[ind[jj]];
+
+            triangle.triangles_array[j].GetN(N,Fi);
+            for (auto pp = 0; pp < DIMENSION; pp++)
+                form_fuc_coeffs << N[pp] << ' ' << endl;
+        }
+
     }
+
+    q_difference.close();
+    form_fuc_coeffs.close();
     return 0;
 }
 
@@ -242,7 +297,7 @@ double func_calculate_q(double t)
         V = ACCELERATION * t;
 
     return ((Coeff_S * rho * V * V * V) /
-            (Thermal_Conductivity * PI * TRIANGLE_BASE * sqrt(TRIANGLE_BASE * TRIANGLE_BASE + TRIANGLE_HEIGHT * TRIANGLE_HEIGHT)));
+            (2 * Thermal_Conductivity * PI * TRIANGLE_BASE * sqrt(TRIANGLE_BASE * TRIANGLE_BASE + TRIANGLE_HEIGHT * TRIANGLE_HEIGHT)));
 }
 
 void func_multiply_matrix_and_vector(double* result_vector, double** matrix, double* vect, uint_fast32_t dim) {
