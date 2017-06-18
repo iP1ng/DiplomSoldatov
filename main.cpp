@@ -6,6 +6,31 @@
 
 using namespace std;
 
+/**
+ * Дубль для сортировки и вывода изотерм
+ */
+struct sorted_temp {
+    double_t temp = 0;
+    uint_fast32_t num = 0;
+};
+
+// qsort
+static int compare (const void * a, const void * b)   // функция сравнения элементов массива
+{
+
+    sorted_temp *orderA = (sorted_temp *)a;
+    sorted_temp *orderB = (sorted_temp *)b;
+
+    if (orderA->temp > orderB->temp) return 1;
+    else if (orderA->temp < orderB->temp) return -1;
+    else return 0;
+
+}
+void GetSorted(sorted_temp * temperatures, int dimension) {
+    qsort(temperatures, dimension, sizeof(sorted_temp), compare);      // сортируем массив чисел
+
+}
+
 int main() {
     /************************************************************************************/
     /*
@@ -121,6 +146,7 @@ int main() {
      * Debug
      */
     /************************************************************************************/
+    sorted_temp *Temperature_sorted = new sorted_temp[n];
     cout << "Number of dots = " << n << endl;
     cout << "Number of triangles = " << k << endl;
     cout << "Heat flow heat_flow = " << heat_flow << endl;
@@ -323,6 +349,19 @@ int main() {
          */
         equation.Solve(Temperature, Result_matrix);
 
+        for (auto i = 0; i < n; i++){
+            Temperature_sorted[i].temp = Temperature[i];
+            Temperature_sorted[i].num = i;
+        }
+
+        GetSorted(Temperature_sorted, n);
+        cout << endl;
+        cout << "--------------------------" << endl;
+        for (auto i = 0; i < n; i++){
+            cout << Temperature_sorted[i].temp << " ";
+            cout << Temperature_sorted[i].num;
+            cout << endl;
+        }
         /************************************************************************************/
         /*
          * Debug

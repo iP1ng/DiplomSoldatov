@@ -1,6 +1,10 @@
 
 #ifndef DIPLOMSOLDATOV_FUNCTIONS_H
 #define DIPLOMSOLDATOV_FUNCTIONS_H
+
+#include <stdlib.h>     /* qsort */
+
+
 double_t func_calculate_rho(double_t t) {
     return (RHO_0 * exp(- Coeff_K * (ACCELERATION * t * t / 2)));
 }
@@ -44,11 +48,6 @@ void print(vector< vector<double_t> > A) {
     }
     cout << endl;
     file_slau.close();
-}
-
-// прототип
-void GetIzotherm(double_t *Isotherm_array, double_t * temperatures) {
-
 }
 
 #endif //DIPLOMSOLDATOV_FUNCTIONS_H
