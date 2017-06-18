@@ -8,11 +8,11 @@
 /**
  * Шаг по пространству
  */
-const double STEP_X = 0.1;
+const double STEP_X = 0.05;
 /**
  * Шаг по времени
  */
-const double TAU = 0.1;
+const double TAU = 0.001;
 
 
 /**
@@ -44,7 +44,7 @@ const double TRIANGLE_BASE = 1.0;
  * Точность пересечения границы прямоугольного треугольника
  * (используется для контроля выхода за границу области при триангуляции)
  */
-const double EPS_T = 0.001;
+const double EPS_T = 0.0001;
 /**
  * Число узлов в выбранном симплексе
  * (В нашем случае это треугольник)
@@ -57,9 +57,9 @@ const uint_fast32_t DIMENSION = 3;
  */
 const double INITIAL_TEMPERATURE = 300;
 /**
- * Коэффициент температуропроводности титана
+ * Коэффициент температуропроводности титана 9300000
  */
-const double Thermal_Diffusivity = 9300000.0;
+const double Thermal_Diffusivity = 9.3;
 /**
  * Коэффициент теплопроводности титана
  */
@@ -87,4 +87,9 @@ const double_t Coeff_K = 0.00013;
 const double TIME_WHEN_FUEL_ENDS = 39.134;
 
 const double PI = 3.1415926535897932384626433832795;
+
+/*Debug */
+const uint_fast32_t DEBUG_TIME_STEPS = 1;
+
+/* End debug */
 #endif //DIPLOMSOLDATOV_CONSTANTS_H

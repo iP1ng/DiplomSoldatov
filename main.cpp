@@ -34,7 +34,7 @@ int main() {
     /**
      * Отладочные сообщения для функци построения триангуляции и нумерации узлов
      */
-    bool debug = false;
+    bool debug = true;
     /**
      * Инстанс класса, отвечающий за триангулацию треугольника
      */
@@ -52,9 +52,13 @@ int main() {
      */
     double q = 0;
     /**
-     * Столбец правых частей для элемента
+     * Столбец правых частей для элемента на текущем слое
      */
     double *F = new double[DIMENSION];
+    /**
+     * Столбец правых частей для элемента
+     */
+    double *F_old = new double[DIMENSION];
     /**
      * Значения температуры в узлах
      */
@@ -78,7 +82,7 @@ int main() {
     /**
      * Матрица коэффициентов элемента K
      */
-    double **K= new double *[DIMENSION];
+    double **K = new double *[DIMENSION];
     /**
      * Матрица коэффициентов элемента C
      */
@@ -97,6 +101,17 @@ int main() {
      */
     vector< vector<double> > equation1_A(n, std::vector<double>(n+1));
     Gauss equation;
+    /**
+     * Вспомогательные переменные для накапливания матриц поэлементно
+     */
+    double **R1; R1 = new double *[n];
+    double *FF; FF  = new double [n];
+    for (int kk = 0; kk<n; kk++){
+        R1[kk] = new double[n];
+        FF[kk] = 0;
+        for (int j = 0; j< n; j++)
+            R1[kk][j] = 0;
+    }
 
     /**
      * Wolfram Mathematica
@@ -122,14 +137,20 @@ int main() {
     ofstream form_fuc_coeffs("form_fuc_coeffs.dat", std::ofstream::out);
     form_fuc_coeffs << k * 3 << endl;
 
-
+    ofstream triangle_temp("triangle_temp.dat", std::ofstream::out);
+    triangle_temp << "Number of dots = " << n << endl;
+    triangle_temp << "Number of triangles = " << k << endl;
+    triangle_temp << "Space step h = " << STEP_X << endl;
+    triangle_temp << "Time step tau = " << TAU << endl;
+    triangle_temp << "Thermal_Diffusivity = " << Thermal_Diffusivity << endl;
+    triangle_temp << "Thermal_Conductivity = " << Thermal_Conductivity << endl;
 
 
 
     /* Debug */
     cout << "Number of dots = " << n << endl;
     cout << "Number of triangles = " << k << endl;
-    cout << "Heat flux q = " << q << endl;
+    cout << "Heat flow q = " << q << endl;
     cout << "Space step h = " << STEP_X << endl;
     cout << "Time step tau = " << TAU << endl;
     cout << endl;
@@ -150,23 +171,33 @@ int main() {
         C[i] = new double[DIMENSION];
     }
 
+    /* Инициализация матрицы жесткости и вектора правой части итоговой системы */
+    for (uint_fast32_t i = 0; i < n; i++) {
+        Main_Matrix[i] = new double[n];
+        Result[i] = 0;
+        for (int j = 0; j < n; j++) {
+            Main_Matrix[i][j] = 0;
+        }
+    }
+
     /* Ищем решения по временным слоям */
     uint_fast32_t number_of_time_steps = floor(TIME_WHEN_FUEL_ENDS / TAU);
-    const uint_fast32_t MAGIC_NUMBER = 50;
-    double_t rho_for_file = 0;
+    //const uint_fast32_t MAGIC_NUMBER = 50;
+    //double_t rho_for_file = 0;
     //for (uint_fast32_t global_tau =0; global_tau  < number_of_time_steps; global_tau++) {
-    for (uint_fast32_t global_tau =0; global_tau  < MAGIC_NUMBER; global_tau++) {
+    for (uint_fast32_t global_tau =0; global_tau  < DEBUG_TIME_STEPS; global_tau++) {
 
-        rho_for_file = func_calculate_rho(global_tau * TAU);
+        //rho_for_file = func_calculate_rho(global_tau * TAU);
         q = -func_calculate_q(global_tau * TAU);
-        rho_difference << global_tau * TAU << ' ' << rho_for_file << endl;
-        q_difference << global_tau * TAU << ' '  << - q << endl;
+        //rho_difference << global_tau * TAU << ' ' << rho_for_file << endl;
+        //q_difference << global_tau * TAU << ' '  << - q << endl;
 
 
-        cout << "q = " << q << endl;
+        //cout << "q = " << q << endl;
         //q = 100000;
 
         for (uint_fast32_t i = 0; i < DIMENSION; i++) {
+            F_old[i] = F[i];
             F[i] = 0;
             Resultic[i] = 0;
             Fi[i] = 0;
@@ -177,28 +208,28 @@ int main() {
             }
         }
         /* Debug */
-        cout << "Time: "<< global_tau * TAU << endl;
-        cout << "Temperature on step " << global_tau << endl;
-        for (uint_fast32_t i = 0; i < n; i++) {
-            cout <<setprecision(16)<< Temp[i] << "\t";
-        }
-        cout << endl;
+        //cout << "Time: "<< global_tau * TAU << endl;
+        //cout << "Temperature on step " << global_tau << endl;
+        //for (uint_fast32_t i = 0; i < n; i++) {
+        //    cout <<setprecision(16)<< Temp[i] << "\t";
+        //}
+        //cout << endl;
         /* End debug */
 
-        /* Инициализация матрицы жесткости и вектора правой части итоговой системы */
+        /*
+         * Обнуление матрицы жесткости и вектора правой части итоговой системы
+         */
         for (uint_fast32_t i = 0; i < n; i++) {
-            Main_Matrix[i] = new double[n];
             Result[i] = 0;
             for (int j = 0; j < n; j++) {
                 Main_Matrix[i][j] = 0;
             }
         }
 
-
-        double **R1; R1 = new double *[n];
-        double *FF; FF  = new double [n];
+        /*
+         * Обнуляем вспомогательные переменные для поэлементного накопления
+         */
         for (int kk = 0; kk<n; kk++){
-            R1[kk] = new double[n];
             FF[kk] = 0;
             for (int j = 0; j< n; j++)
                 R1[kk][j] = 0;
@@ -215,7 +246,9 @@ int main() {
             ind[1] = triangle.triangles_array[i].second_point.point_num;
             ind[2] = triangle.triangles_array[i].third_point.point_num;
 
-            /* В Fi записываем температуры Temp на текущем временном слое тех узлов, которые входят в элемент k */
+            /*
+             * В Fi записываем температуры Temp на текущем временном слое тех узлов, которые входят в элемент k
+             */
             for (uint_fast32_t j = 0; j < DIMENSION; j++) {
                 Fi[j] = Temp[ind[j]];
             }
@@ -224,30 +257,44 @@ int main() {
 
             func_multiply_matrix_and_vector(Resultic, substracted_matrix, Fi, 3);
 
-            /* Заполняем итоговую матрицу жесткости и вектор правой части  полученными на элементе значениями */
+            /*
+             * Заполняем итоговую матрицу жесткости и вектор правой части  полученными на элементе значениями
+             * Реализуем схему 11.23 стр. 206 Сегерлинд
+             *
+             * FF = -2F*
+             *
+             * Main_Matrix = [K] + 2/tau [C]
+             *
+             * R1 = 2/tau [C] - [K]
+             *
+             */
             for (uint_fast32_t j = 0; j < 3; j++) {
-                //Result[ind[j]] += (Resultic[j]) - 2 * F[j];
-                // это нужно поменять!!!!! по формуле 11.21
-                FF[ind[j]] += -   F[j];
-                //Result[ind[j]] += F[j];
+                // по формуле 11.21
+                FF[ind[j]] += - (F[j] + F_old[j]);
                 for (uint_fast32_t l = 0; l < 3; l++) {
                     Main_Matrix[ind[j]][ind[l]] += (C[j][l] * 2 / TAU) + K[j][l];
                     R1[ind[j]][ind[l]] += substracted_matrix[j][l];
-                    //Main_Matrix[ind[j]][ind[l]] += K[j][l];
                 }
             }
         }
-        for (int ix = 0; ix < n; ix++) {
-            Result[ix] = 0;
-            for (int jx = 0; jx <n; jx++)
-                Result[ix] += R1[ix][jx] * Temp[jx];
-        }
 
+        /*
+         * Заполняыем Result - итоговый вектор правой части уравнения 11.23
+         * Он состоит из поэлементно накопленных значений
+         * Result = R1 + FF
+         */
+        for (int ii = 0; ii < n; ii++) {
+            Result[ii] = 0;
+            for (int jj = 0; jj <n; jj++)
+                Result[ii] += R1[ii][jj] * Temp[jj];
+        }
         for (int ii = 0; ii<n; ii++){
+            // На этом моменте в Result содержится полностью сформированный вектор правой части
             Result[ii]+= FF[ii];
             //cout<<setprecision(9)<<Result[ii]<<endl;
         }
 
+        //TODO заменить Main_Matrix везде на equation1_A
         for (int p=0; p<n; p++) {
             for (int j=0; j<n; j++) {
                 equation1_A[p][j] = Main_Matrix[p][j];
@@ -257,8 +304,39 @@ int main() {
             equation1_A[p][n] = Result[p];
         }
 
+        /*
+         * Вычисляем температуру Temp на новом слое по времени
+         */
         equation.Solve(Temp, equation1_A);
-        double N[3];
+
+        /* Deebug */
+        uint_fast32_t dots_num = floor(1 / STEP_X) + 1;
+        uint_fast32_t dots_num_next = dots_num;
+        uint_fast32_t dots_shift = 0;
+
+        triangle_temp << endl;
+        triangle_temp << "Temperature on time = " << global_tau * TAU << endl;
+        triangle_temp << "with heat flow q = " << q << endl;
+        for (auto strs = 0; strs < dots_num; strs++)
+            triangle_temp << "********";
+        triangle_temp << endl;
+        for (auto d = 0; d < n; d++) {
+            if (d == dots_num) {
+                dots_num_next = dots_num_next - 1;
+                dots_num = dots_num + dots_num_next;
+                dots_shift ++;
+                triangle_temp << endl;
+                for (auto st = 0; st < dots_shift; st++)
+                    triangle_temp << setw(8) << " ";
+            }
+            triangle_temp << setw(8) << setprecision(6)<< Temp[d];
+        }
+        /* End debug */
+        /*
+         * Вычисляем коэффициенты функции формы
+         */
+
+        /*double N[3];
 
         for (int j = 0; j<k; j++ ){
 
@@ -273,9 +351,9 @@ int main() {
             triangle.triangles_array[j].GetN(N,Fi);
             for (auto pp = 0; pp < DIMENSION; pp++)
                 form_fuc_coeffs << N[pp] << ' ' << endl;
-        }
+        }*/
 
-    }
+    } // Конец цикла по времени
 
     q_difference.close();
     form_fuc_coeffs.close();

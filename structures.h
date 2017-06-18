@@ -183,11 +183,8 @@ struct triangles {
     void Column_F(double* F, double q)
     {
         double L = sqrt(STEP_X * STEP_X + 4 * STEP_X * STEP_X);
-
-        /* Для теста из учебника (стр. 95) */
-        //L = 1;
-
         double k = L * q * 2.0 * PI / 6;
+
         F[0] = 0;
         F[1] = 0;
         F[2] = 0;
@@ -197,13 +194,7 @@ struct triangles {
             F[2] = k * (first_point.rad_vector() + 2 * third_point.rad_vector());
 
         }
-        /* Для теста из учебника (стр. 95) */
-        /*
-        if (fabs( second_point.y - third_point.y) < EPS_T ) {
-            F[1] = k * (2 * second_point.rad_vector() + third_point.rad_vector());
-            F[2] = k * (second_point.rad_vector() + 2 * third_point.rad_vector());
-        }*/
-
     }
+
 };
 #endif //DIPLOMSOLDATOV_STRUCTURES_H

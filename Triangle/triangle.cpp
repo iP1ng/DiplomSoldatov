@@ -76,7 +76,11 @@ uint_fast32_t IsoscelesTriangleGrid::GetGreed(bool debug)
             x = (ii + 1) * m_hx;
             y = LineFunction_ab(x, i * m_hx);
 
-            triangle.third_point = { x, y, k + ((uint_fast32_t)(length / m_hx) + 1) };
+            // ошибка округления, видимо при m_hx = 0.01
+            cout << "test " << k + ((length / m_hx) + 1) << endl;
+            cout << "length " << length << endl;
+            cout << " k was " << k << endl;
+            triangle.third_point = { x, y, k + ((length / m_hx) + 1) };
 
             triangles_array.push_back(triangle);
 
@@ -120,7 +124,7 @@ uint_fast32_t IsoscelesTriangleGrid::GetGreed(bool debug)
             x = (ii + 2) * m_hx;
             y = LineFunction_ab(x, (i + 1) * m_hx);
 
-            triangle.third_point = { x, y, k + 1 + ((uint_fast32_t)(length / m_hx) + 1) };
+            triangle.third_point = { x, y, k + 1 + ((length / m_hx) + 1) };
             triangles_array.push_back(triangle);
 
             if (debug == true) {
