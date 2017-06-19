@@ -58,7 +58,7 @@ public:
      * debug = true для отладочных сообщений
      * На выходе возвращает число узлов
      */
-    uint_fast32_t GetGreed(double_t m_hx, bool debug);
+    uint_fast32_t GetGreed(double_t m_hx, points *cordinates, bool debug);
 
     /*
      * Функция, вычисляющая значение координаты y по заданной координате x на прямой AB треугольника

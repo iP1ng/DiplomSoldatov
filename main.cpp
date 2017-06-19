@@ -46,11 +46,16 @@ int main() {
      */
     IsoscelesTriangleGrid triangle((points){A_x, A_y}, (points){B_x, B_y}, (points){C_x, C_y});
     /**
+     * Массив, в который запишутся координаты узлов треугольника, соответствующщие номерам узлов
+     */
+    uint_fast32_t nn = (TRIANGLE_BASE / STEP_X + 1) * (TRIANGLE_BASE / STEP_X + 2) / 2;
+    points *coordinates = new points[nn];
+    /**
      * Разбиваем треугольник на маленькие треугольники с шагом STEP_X
      * Число получееных узлов возвращаем в переменную 
      * +1 т.к. нумерация узлов в методе с нуля
      */
-    uint_fast32_t n = triangle.GetGreed(STEP_X, debug) +1;
+    uint_fast32_t n = triangle.GetGreed(STEP_X, coordinates, debug) +1;
     /**
      * Число маленьких треугольников, полученых после триангуляции
      */
@@ -184,6 +189,13 @@ int main() {
      * Коэффициенты функции формы для элементов
      */
     ofstream form_func_coeffs("form_func_coeffs.dat", std::ofstream::out);
+    /**
+     * Изотермы
+     */
+    ofstream isotherms("isotherms.dat", std::ofstream::out);
+    ofstream triangles_temperature("triangles_temperature.dat", std::ofstream::out);
+    triangles_temperature << n << endl;
+
     
     triangles_coordinates << n << endl;
     for (auto i = 0; i < k; i ++) {
@@ -249,6 +261,7 @@ int main() {
             average_temp += Temperature[i] / n;
 
         heat_flow = -func_calculate_q(flight_time);
+        //heat_flow = - 10;
 
         rho_difference << flight_time << ' ' << func_calculate_rho(flight_time) << endl;
         q_difference << flight_time << ' '  << - heat_flow << endl;
@@ -329,7 +342,7 @@ int main() {
                 /* по формуле 11.21 */
                 F[index[i]] += - (F_elem[i]);
                 for (auto j = 0; j < DIMENSION; j++) {
-                    Result_matrix[index[i]][index[j]] += (C[i][j] * 2 / TAU) + K[i][j];
+                    Result_matrix[index[i]][index[j]] += (C[i][j] * 2.0 / TAU) + K[i][j];
                     R[index[i]][index[j]] += substracted_matrix[i][j];
                 }
             }
@@ -341,7 +354,10 @@ int main() {
          */
         for (auto i = 0; i < n; i++) {
             for (auto j = 0; j <n; j++)
-                Result_matrix[i][n] += (R[i][j] * Temperature[j]) + (F[i] - F_old[i]);
+                Result_matrix[i][n] += (R[i][j] * Temperature[j]);
+        }
+        for (auto i = 0; i < n; i++) {
+                Result_matrix[i][n] +=  (F[i] - F_old[i]);
         }
 
         /**
@@ -352,16 +368,23 @@ int main() {
         for (auto i = 0; i < n; i++){
             Temperature_sorted[i].temp = Temperature[i];
             Temperature_sorted[i].num = i;
+            triangles_temperature << Temperature[i] << endl;
         }
 
+        // TODO дописать изотермы
         GetSorted(Temperature_sorted, n);
-        cout << endl;
-        cout << "--------------------------" << endl;
+        isotherms << " --------------------- " << endl;
+        isotherms << "flight_time = " << flight_time << endl;
         for (auto i = 0; i < n; i++){
-            cout << Temperature_sorted[i].temp << " ";
-            cout << Temperature_sorted[i].num;
-            cout << endl;
+            if (Temperature_sorted[i].temp >= 299 && Temperature_sorted[i].temp <= 301) {
+                isotherms << Temperature_sorted[i].temp << " ";
+                isotherms << coordinates[Temperature_sorted[i].num].x  << " ";
+                isotherms << coordinates[Temperature_sorted[i].num].y;
+                isotherms << endl;
+            }
         }
+
+
         /************************************************************************************/
         /*
          * Debug
@@ -392,7 +415,7 @@ int main() {
         /*
          * Вычисляем коэффициенты функции формы
          */
-        /*double_t N[3];
+        double_t N[3];
 
         for (int j = 0; j<k; j++ ){
 
@@ -407,7 +430,7 @@ int main() {
             triangle.triangles_array[j].GetN(N,Temperature_elem);
             for (auto pp = 0; pp < DIMENSION; pp++)
                 form_func_coeffs << N[pp] << ' ' << endl;
-        }*/
+        }
 
     } // Конец цикла по времени
 

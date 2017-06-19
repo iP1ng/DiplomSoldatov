@@ -11,7 +11,7 @@ double_t IsoscelesTriangleGrid::LineFunction_bc()
     return TRIANGLE_BASE;
 }
 
-uint_fast32_t IsoscelesTriangleGrid::GetGreed(double_t m_hx, bool debug)
+uint_fast32_t IsoscelesTriangleGrid::GetGreed(double_t m_hx, points *cordinates, bool debug)
 {
     /*
      * Массив координат треугольников
@@ -54,6 +54,8 @@ uint_fast32_t IsoscelesTriangleGrid::GetGreed(double_t m_hx, bool debug)
     // m_b.x -1 потому что тут бага в координатах (см файл constants).
     double_t length = LineFunction_bc() + STEP_X;
 
+    uint_fast32_t  coord_num = 0;
+
     /* Переход с ряда на ряд (вверх), пока не дойдем до середины треугольника */
     while (y < TRIANGLE_HEIGHT) {
         length -= STEP_X;
@@ -62,7 +64,9 @@ uint_fast32_t IsoscelesTriangleGrid::GetGreed(double_t m_hx, bool debug)
         for (;;) {
             x = ii * m_hx;
             y = LineFunction_ab(x, i * m_hx);
-
+            cordinates[coord_num].x = x;
+            cordinates[coord_num].y = y;
+            coord_num ++;
             triangle.first_point = { x, y, k };
 
             x = (ii + 1) * m_hx;
@@ -101,6 +105,9 @@ uint_fast32_t IsoscelesTriangleGrid::GetGreed(double_t m_hx, bool debug)
                 i = 0;
                 j++;
                 k = n;
+                cordinates[coord_num].x = triangle.second_point.x;
+                cordinates[coord_num].y = triangle.second_point.y;
+                coord_num ++;
                 if (debug == true) {
                     cout << "BREAK CONDITION." << endl;
                     cout << "n = " << n << endl;
@@ -146,5 +153,8 @@ uint_fast32_t IsoscelesTriangleGrid::GetGreed(double_t m_hx, bool debug)
             cout << "New level l = " << l << endl;
         }
     }
+    cordinates[coord_num].x = C_x;
+    cordinates[coord_num].y = C_y;
+    //cout << "coord_num = " << coord_num << endl;
     return triangles_array.back().third_point.point_num;
 }
